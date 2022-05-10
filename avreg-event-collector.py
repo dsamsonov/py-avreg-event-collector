@@ -45,6 +45,7 @@ def evt_version(*array):
 
 #обработка события EVENT
 def evt_event(array, cams_rows):
+    print(array)
     dt1      = array[1]
     dt2      = array[2]
     cam_nr   = int(array[3])
@@ -55,12 +56,25 @@ def evt_event(array, cams_rows):
     for row in cams_rows:
          if row[0] == cam_nr: cam_name = row[1]
     if evt_id == 1: #события демона avreg
-         if ser_nr == 0: send_message("AVREG демон запущен в",dt2)
-         if ser_nr == 1: send_message("AVREG демон остановлен в",dt1)
-         if ser_nr == 2: send_message("AVREG демон перезапуск в",dt1)
+         if ser_nr == 0: send_message("AVREG демон запущен в {}".format(dt2))
+         if ser_nr == 1: send_message("AVREG демон остановлен в {}".format(dt1))
+         if ser_nr == 2: send_message("AVREG демон перезапуск в {}".format(dt1))
     if evt_id == 3: #cбой захвата
-         if ser_nr == 0: send_message("Камера: {} название: {} error: {}".format(cam_nr,cam_name,evt_cont))
-         if ser_nr == 3: send_message("Камера: {} название: {} error: {}".format(cam_nr,cam_name,evt_cont))
+         filename = "/tmp/cam_{}_capture_failed.txt".format(cam_nr)
+         if ser_nr == 0:
+             try:
+                 if os.path.isfile(filename): os.remove(filename)
+             except Exception as err:
+                 print("{} error: {}".format(datetime.now(),err))
+             send_message("Камера: {} название: {} {}".format(cam_nr,cam_name,evt_cont))
+         if ser_nr == 3:
+             try:
+                 f = open(filename,"w+")
+                 f.write("cam[{}]: {}: {}".format(cam_nr,dt1,evt_cont))
+                 f.close()
+             except Exception as err:
+                 print("{} error: {}".format(datetime.now(),err))
+             send_message("Камера: {} название: {} error: {}".format(cam_nr,cam_name,evt_cont))
     if evt_id == 22: #изменение качества видеокадра
          if ser_nr == 0: send_message("Камера: {} название: {} засветка окончена".format(cam_nr,cam_name))
          if ser_nr == 1: send_message("Камера: {} название: {} засветка началась".format(cam_nr,cam_name))
@@ -92,7 +106,6 @@ if __name__ == '__main__':
     print("{} avreg event collector started".format(datetime.now()))
     while True:
         msgArray = input()
-        print(msgArray)
         msgArray = msgArray.split("\t")
         if msgArray[0] == "VERSION":
            p = mp.Process(target = evt_version, args = (msgArray))
@@ -103,6 +116,8 @@ if __name__ == '__main__':
         elif msgArray[0] == "QUIT":
             print("Avreg event-collector closed by command")
             exit(0)
+        elif msgArray[0] == "CONF":
+            pass
         else:
             print("unknown event",msgArray)
 exit(0)
