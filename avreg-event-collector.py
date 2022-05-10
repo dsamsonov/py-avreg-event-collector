@@ -44,8 +44,9 @@ def evt_version(*array):
     else: print("VERSION: unknown event",array);
 
 #обработка события EVENT
-def evt_event(array, cams_rows):
+def evt_event(array, cams_rows,**options):
     print(array)
+    capt_err = options.get("tg_capt_err",True)
     dt1      = array[1]
     dt2      = array[2]
     cam_nr   = int(array[3])
@@ -60,13 +61,14 @@ def evt_event(array, cams_rows):
          if ser_nr == 1: send_message("AVREG демон остановлен в {}".format(dt1))
          if ser_nr == 2: send_message("AVREG демон перезапуск в {}".format(dt1))
     if evt_id == 3: #cбой захвата
+         print("{} Cam: {} name: {} {}".format(datetime.now(),cam_nr,cam_name,evt_cont))
          filename = "/tmp/cam_{}_capture_failed.txt".format(cam_nr)
          if ser_nr == 0:
              try:
                  if os.path.isfile(filename): os.remove(filename)
              except Exception as err:
                  print("{} error: {}".format(datetime.now(),err))
-             send_message("Камера: {} название: {} {}".format(cam_nr,cam_name,evt_cont))
+             if capt_err == True: send_message("Камера: {} название: {} {}".format(cam_nr,cam_name,evt_cont))
          if ser_nr == 3:
              try:
                  f = open(filename,"w+")
@@ -74,7 +76,7 @@ def evt_event(array, cams_rows):
                  f.close()
              except Exception as err:
                  print("{} error: {}".format(datetime.now(),err))
-             send_message("Камера: {} название: {} error: {}".format(cam_nr,cam_name,evt_cont))
+             if capt_err == True: send_message("Камера: {} название: {} error: {}".format(cam_nr,cam_name,evt_cont))
     if evt_id == 22: #изменение качества видеокадра
          if ser_nr == 0: send_message("Камера: {} название: {} засветка окончена".format(cam_nr,cam_name))
          if ser_nr == 1: send_message("Камера: {} название: {} засветка началась".format(cam_nr,cam_name))
@@ -111,7 +113,8 @@ if __name__ == '__main__':
            p = mp.Process(target = evt_version, args = (msgArray))
            p.start()
         elif msgArray[0] == "EVENT":
-           p = mp.Process(target = evt_event, args = (msgArray,cams_rows))
+           options = {"tg_capt_err": "{}".format(tg_capture_err)}
+           p = mp.Process(target = evt_event, args = (msgArray,cams_rows), kwargs = (options))
            p.start()
         elif msgArray[0] == "QUIT":
             print("Avreg event-collector closed by command")
