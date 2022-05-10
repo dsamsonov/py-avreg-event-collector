@@ -93,7 +93,7 @@ if __name__ == '__main__':
     while True:
         msgArray = input()
         print(msgArray)
-        msgArray = MsgArray.split("\t")
+        msgArray = msgArray.split("\t")
         if msgArray[0] == "VERSION":
            p = mp.Process(target = evt_version, args = (msgArray))
            p.start()
