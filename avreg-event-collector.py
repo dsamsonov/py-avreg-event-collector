@@ -91,8 +91,9 @@ if __name__ == '__main__':
         exit(1)
     print("{} avreg event collector started".format(datetime.now()))
     while True:
-        msgArray = input().split("\t")
-
+        msgArray = input()
+        print(msgArray)
+        msgArray = MsgArray.split("\t")
         if msgArray[0] == "VERSION":
            p = mp.Process(target = evt_version, args = (msgArray))
            p.start()
